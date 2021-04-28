@@ -4,7 +4,7 @@ import discord
 
 config = dotenv_values("config.env")
 
-client = discord.client()
+client = discord.Client()
 
 
 
