@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 
 import discord
+import dotenv
 from discord.ext import commands
 from discord_slash import SlashCommand
 from discord_slash.utils.manage_commands import create_option, create_choice
@@ -19,24 +20,36 @@ slash = SlashCommand(bot, override_type=True, sync_commands=True)
 guild_ids = [int(dotenv_values("config.env")["guild_id"])]
 
 
-@slash.slash(name="Reboot", description=f"", guild_ids=guild_ids, )
+async def config(key, value):
+    dotenv.set_key("config.env", str(key).upper(), value)
+
+
+@slash.slash(name="Reboot", description=f"", guild_ids=guild_ids)
 async def _reboot(ctx):
     now = datetime.now()  # current date and time
     result = discord.Embed(
         title='Rebooting',
-        description=f'Exec time: {now}\n\n**REBOOTING**',
+        description=f'Execution time: {now}\n\n**ATTEMPTING REBOOT**',
         colour=discord.Colour.teal()
     )
+    await ctx.send(embed=result)
     try:
-        if ctx.author.id not in whitelisted:
+        if str(ctx.author.id) not in whitelisted:
             raise Exception("01 Permission Denied! User id is not found in whitelisted")
-        await ctx.send(embed=result)
+        output = "Verification Complete!\nRebooting..."
     except Exception as e:
         output = f"**An error has occurred**! Exception: ``{e}``"
         if str(e).startswith("01 "):
             output += "\n***🔴🔴This incident will be reported!🔴🔴***"
+        await ctx.send(output)
     else:
-        os.execv(sys.argv[0], sys.argv)
+        await ctx.send(output)
+        try:
+            os.execv(sys.executable, ['python'] + sys.argv)
+        except Exception as e:
+            output = f"**An error has occurred**! Exception: ``{e}`` at {now}"
+            await ctx.message.delete()
+            await ctx.send(output)
 
 
 @slash.slash(name="config", description="Edit `config.env` file", guild_ids=guild_ids, options=[
@@ -63,7 +76,8 @@ async def _reboot(ctx):
         ])
 ])
 async def _config(ctx, option):
-    # msg = ""
+    msg = ""
+
     def check_int(m):
         try:
             int(m.content)
@@ -96,7 +110,7 @@ async def _config(ctx, option):
             if not (check_ip(msg)):
                 raise Exception("00 Invalid Input")
         await ctx.send(f"Verifying Permissions for `{ctx.author.id}`...")
-        if ctx.author.id not in whitelisted:
+        if str(ctx.author.id) not in whitelisted:
             raise Exception("01 Permission Denied! User id is not found in whitelisted")
     except Exception as e:
         output = f"**An error has occurred**! Exception: ``{e}``"
@@ -108,10 +122,17 @@ async def _config(ctx, option):
         await ctx.send(output)
 
     else:
-        await ctx.send("Success!")
+        try:
+            await config(option, str(msg.content))
+        except Exception as e:
+            output = f"**An error has occurred**! Exception: ``{e}``"
+            print(e)
+            await ctx.send(output)
+        else:
+            await ctx.send("Success!")
 
 
-@slash.slash(name="set", description="Execute `set`", guild_ids=guild_ids, )
+@slash.slash(name="set", description="Execute `set` command", guild_ids=guild_ids, )
 async def _set(ctx, key, value):
     now = datetime.now()  # current date and time
     result = discord.Embed(
