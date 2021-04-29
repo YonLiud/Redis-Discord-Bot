@@ -20,7 +20,7 @@ slash = SlashCommand(bot, override_type=True, sync_commands=True)
 guild_ids = [int(dotenv_values("config.env")["guild_id"])]
 
 
-async def config(key, value):
+async def env_adj(key, value):
     dotenv.set_key("config.env", str(key).upper(), value)
 
 
@@ -123,7 +123,7 @@ async def _config(ctx, option):
 
     else:
         try:
-            await config(option, str(msg.content))
+            await env_adj(option, str(msg.content))
         except Exception as e:
             output = f"**An error has occurred**! Exception: ``{e}``"
             print(e)
