@@ -168,15 +168,37 @@ async def _get(ctx, key):
 
 @slash.slash(name="DEL", description="delete key", guild_ids=guild_ids, )
 async def _get(ctx, key):
+    try:
+        if str(ctx.message.id) not in whitelisted:
+            raise Exception("01 Permission Denied! User id is not found in whitelisted")
+        now = datetime.now()  # current date and time
+        r.delete(str(key))
+        result = discord.Embed(
+            title='Get:',
+            description=f'Execution Time: {now}\n\nDeleted Key: ``{key}``',
+            colour=discord.Colour.blue()
+        )
+        result.set_footer(text="This is an open source project by @YonLiud at GitHub", icon_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png")
+        await ctx.send(embed=result)
+    except Exception as e:
+        await ctx.send(f"**An error has occurred**! Exception: ``{e}``")
+
+@slash.slash(name="EXPIRE", description="key will be deleted in 120 seconds", guild_ids=guild_ids, )
+async def _get(ctx, key, time):
     now = datetime.now()  # current date and time
-    r.delete(str(key))
-    result = discord.Embed(
-        title='Get:',
-        description=f'Execution Time: {now}\n\nDeleted Key: ``{key}``',
-        colour=discord.Colour.blue()
-    )
-    result.set_footer(text="This is an open source project by @YonLiud at GitHub", icon_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png")
-    await ctx.send(embed=result)
+    try:
+        if str(ctx.message.id) not in whitelisted:
+            raise Exception("01 Permission Denied! User id is not found in whitelisted")
+        r.expire(str(key), int(time))
+        result = discord.Embed(
+            title='Get:',
+            description=f'Execution Time: {now}\n\nDeleted Key: ``{key}``',
+            colour=discord.Colour.blue()
+        )
+        result.set_footer(text="This is an open source project by @YonLiud at GitHub", icon_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png")
+        await ctx.send(embed=result)
+    except Exception as e:
+        await ctx.send(f"**An error has occurred**! Exception: ``{e}``")
 
 
 
