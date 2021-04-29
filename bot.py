@@ -2,13 +2,17 @@ import os
 import re
 import sys
 from datetime import datetime
+import time
 
 import discord
 import dotenv
+import redis
 from discord.ext import commands
 from discord_slash import SlashCommand
 from discord_slash.utils.manage_commands import create_option, create_choice
 from dotenv import dotenv_values
+
+r = redis.Redis(host=dotenv_values("config.env")["HOSTNAME"], port=dotenv_values("config.env")["PORT"], db=dotenv_values("config.env")["DB"])
 
 now = datetime.now()  # current date and time
 date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
@@ -32,7 +36,9 @@ async def _reboot(ctx):
         description=f'Execution time: {now}\n\n**ATTEMPTING REBOOT**',
         colour=discord.Colour.teal()
     )
+    result.set_footer(text="This is an open source project by @YonLiud at GitHub", icon_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png")
     await ctx.send(embed=result)
+    time.sleep(2)
     try:
         if str(ctx.author.id) not in whitelisted:
             raise Exception("01 Permission Denied! User id is not found in whitelisted")
@@ -129,29 +135,49 @@ async def _config(ctx, option):
             print(e)
             await ctx.send(output)
         else:
-            await ctx.send("Success!")
+            await ctx.send("Success!\nA Reboot is required to apply changes to active session")
 
 
-@slash.slash(name="set", description="Execute `set` command", guild_ids=guild_ids, )
+@slash.slash(name="SET", description="set value in key", guild_ids=guild_ids, )
 async def _set(ctx, key, value):
     now = datetime.now()  # current date and time
+    r.set(str(key), str(value))
+    truvalue = r.get(str(key)).decode("utf-8")
     result = discord.Embed(
         title='Set:',
-        description=f'Exec time: {now}\n\n``{key}``: ``{value}``',
-        colour=discord.Colour.red()
+        description=f'Execution Time: {now}\n\nDatabase: ``{key}``: ``{truvalue}``',
+        colour=discord.Colour.blue()
+
     )
+    result.set_footer(text="This is an open source project by @YonLiud at GitHub", icon_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png")
     await ctx.send(embed=result)
 
 
-@slash.slash(name="get", description="Execute `get`", guild_ids=guild_ids, )
+@slash.slash(name="GET", description="get value in key", guild_ids=guild_ids, )
 async def _get(ctx, key):
     now = datetime.now()  # current date and time
+    value = r.get(str(key))
     result = discord.Embed(
         title='Get:',
-        description=f'Exec time: {now}\n\n``{key}``: ``<value>``',
-        colour=discord.Colour.red()
+        description=f'Execution Time: {now}\n\n``{key}``: ``{value}``',
+        colour=discord.Colour.blue()
     )
+    result.set_footer(text="This is an open source project by @YonLiud at GitHub", icon_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png")
     await ctx.send(embed=result)
+
+
+@slash.slash(name="DEL", description="delete key", guild_ids=guild_ids, )
+async def _get(ctx, key):
+    now = datetime.now()  # current date and time
+    r.delete(str(key))
+    result = discord.Embed(
+        title='Get:',
+        description=f'Execution Time: {now}\n\nDeleted Key: ``{key}``',
+        colour=discord.Colour.blue()
+    )
+    result.set_footer(text="This is an open source project by @YonLiud at GitHub", icon_url="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png")
+    await ctx.send(embed=result)
+
 
 
 @bot.event
